@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Texas Vascular Institute - OBL Medical Billing Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; }
+    select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    // Icon Components
+    const Calculator = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><line x1="8" x2="8.01" y1="10" y2="10"/><line x1="12" x2="12.01" y1="10" y2="10"/><line x1="16" x2="16.01" y1="10" y2="10"/><line x1="8" x2="8.01" y1="14" y2="14"/><line x1="12" x2="12.01" y1="14" y2="14"/><line x1="8" x2="8.01" y1="18" y2="18"/><line x1="12" x2="12.01" y1="18" y2="18"/>
+      </svg>
+    );
+
+    const DollarSign = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    );
+
+    const FileText = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>
+      </svg>
+    );
+
+    const TrendingUp = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/>
+      </svg>
+    );
+
+    const Building2 = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+      </svg>
+    );
+
+    const RotateCcw = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+      </svg>
+    );
+
+    // Main Component
+    const MedicalBillingCalculator = () => {
+      const procedures = {
+        'UFE': [
+          { code: '37243', desc: 'Percutaneous placement of intravascular closure device', prices: { Aetna: 9226.25, 'BCBS HMO': 10174.01, 'BCBS PPO': 11124.56, Cigna: 11263.16, Medicare: 8212.31, Humana: 7892.31, UHC: 9873.39 }},
+          { code: '36247', desc: 'Selective catheter placement into specific artery', prices: { Aetna: 1506.47, 'BCBS HMO': 1666.32, 'BCBS PPO': 1822, Cigna: 1766.86, Medicare: 1364, Humana: 1315.5, UHC: 1560.15 }},
+          { code: '36140', desc: 'Introduction of needle/catheter into artery', prices: { Aetna: 542.9, 'BCBS HMO': 597.67, 'BCBS PPO': 653.48, Cigna: 557.91, Medicare: 492.74, Humana: 470.7, UHC: 492.98 }},
+          { code: '75136', desc: 'MRI to evaluate blood vessels', prices: { Aetna: 143.71, 'BCBS HMO': 143.71, 'BCBS PPO': 143.71, Cigna: 143.71, Medicare: 140.63, Humana: 143.73, UHC: 143.71 }},
+          { code: '76937', desc: 'Real-time ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '99152', desc: 'Moderate sedation, first 15 minutes', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Moderate sedation, additional 15 minutes', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }}
+        ],
+        'GAE': [
+          { code: '37242', desc: 'Vascular embolization procedure', prices: { Aetna: 7672.98, 'BCBS HMO': 8376.79, 'BCBS PPO': 9159.43, Cigna: 8916.82, Medicare: 6775.26, Humana: 6506.61, UHC: 7823.5 }},
+          { code: '36247', desc: 'Selective catheter placement', prices: { Aetna: 1506.45, 'BCBS HMO': 1666.32, 'BCBS PPO': 1822, Cigna: 1766.86, Medicare: 1364, Humana: 1315.5, UHC: 1560.15 }},
+          { code: '36248', desc: 'Additional catheter placement', prices: { Aetna: 121.24, 'BCBS HMO': 121.24, 'BCBS PPO': 121.24, Cigna: 121.24, Medicare: 112.14, Humana: 121.24, UHC: 121.24 }},
+          { code: '75710', desc: 'X-ray imaging of neck arteries', prices: { Aetna: 153.28, 'BCBS HMO': 177.46, 'BCBS PPO': 177.46, Cigna: 142.2, Medicare: 147.01, Humana: 143.84, UHC: 334.18 }},
+          { code: '75774', desc: 'X-ray imaging of leg arteries', prices: { Aetna: 99.36, 'BCBS HMO': 111.25, 'BCBS PPO': 111.25, Cigna: 93.95, Medicare: 94.59, Humana: 93.28, UHC: 219.42 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.37 }},
+          { code: '99152', desc: 'Moderate sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Moderate sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }}
+        ],
+        'PFE': [
+          { code: '37242', desc: 'Vascular embolization procedure', prices: { Aetna: 7672.98, 'BCBS HMO': 8376.79, 'BCBS PPO': 9159.43, Cigna: 8916.82, Medicare: 6775.26, Humana: 6506.61, UHC: 7823.5 }},
+          { code: '75710', desc: 'X-ray imaging of neck arteries', prices: { Aetna: 153.28, 'BCBS HMO': 177.46, 'BCBS PPO': 177.46, Cigna: 142.2, Medicare: 147.01, Humana: 143.84, UHC: 334.18 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '36247', desc: 'Selective catheter placement', prices: { Aetna: 1506.45, 'BCBS HMO': 1666.32, 'BCBS PPO': 1822, Cigna: 1766.86, Medicare: 1364, Humana: 1315.5, UHC: 1560.15 }},
+          { code: '99152', desc: 'Moderate sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Moderate sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '36246', desc: '3rd order catheter placement in neck/chest', prices: { Aetna: 875.4, 'BCBS HMO': 975.95, 'BCBS PPO': 1067.13, Cigna: 997.67, Medicare: 802.11, Humana: 771.27, UHC: 886.6 }}
+        ],
+        'MayThurner No Stent': [
+          { code: '37252', desc: 'Mechanical thrombectomy, venous', prices: { Aetna: 1016.89, 'BCBS HMO': 1119.32, 'BCBS PPO': 1223.9, Cigna: 1342.52, Medicare: 909.77, Humana: 865.16, UHC: 1201.42 }},
+          { code: '37253', desc: 'Mechanical thrombectomy, arterial', prices: { Aetna: 171.68, 'BCBS HMO': 199.48, 'BCBS PPO': 218.11, Cigna: 213.41, Medicare: 167.08, Humana: 164.48, UHC: 194.16 }},
+          { code: '76937', desc: 'Ultrasound guidance for access', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '75822', desc: 'Venous catheter placement', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '99152', desc: 'Sedation services, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation services, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '75825', desc: 'Venous sampling, complete', prices: { Aetna: 115.85, 'BCBS HMO': 130.05, 'BCBS PPO': 130.05, Cigna: 109.56, Medicare: 111.77, Humana: 110.87, UHC: 256.24 }},
+          { code: '36011', desc: 'Catheter placement, first order', prices: { Aetna: 863.51, 'BCBS HMO': 944.78, 'BCBS PPO': 1033.05, Cigna: 1009.82, Medicare: 768.31, Humana: 743.81, UHC: 890.33 }},
+          { code: '36012', desc: 'Catheter placement, second order', prices: { Aetna: 882.96, 'BCBS HMO': 978.68, 'BCBS PPO': 1070.11, Cigna: 1024.99, Medicare: 802.29, Humana: 775.45, UHC: 904.41 }},
+          { code: '36010', desc: 'Catheter into aorta, non-selective', prices: { Aetna: 577.01, 'BCBS HMO': 634.66, 'BCBS PPO': 693.95, Cigna: 614.33, Medicare: 519.26, Humana: 493.75, UHC: 542.79 }},
+          { code: '37248', desc: 'Revascularization, upper extremity', prices: { Aetna: 1448.69, 'BCBS HMO': 1592.3, 'BCBS PPO': 1741.6, Cigna: 1757.43, Medicare: 1299.33, Humana: 1246.16, UHC: 1549.33 }}
+        ],
+        'MayThurner Stent': [
+          { code: '37238', desc: 'Stent placement in iliac arteries', prices: { Aetna: 3688.37, 'BCBS HMO': 4053.79, 'BCBS PPO': 4432.53, Cigna: 3707.86, Medicare: 3308.83, Humana: 3154.74, UHC: 3259.57 }},
+          { code: '37239', desc: 'Stent placement in femoral arteries', prices: { Aetna: 1822.66, 'BCBS HMO': 2013.06, 'BCBS PPO': 2201.04, Cigna: 1716.38, Medicare: 1653.28, Humana: 1579.28, UHC: 1510.35 }},
+          { code: '37252', desc: 'Mechanical thrombectomy, venous', prices: { Aetna: 1016.89, 'BCBS HMO': 1119.32, 'BCBS PPO': 1223.9, Cigna: 1342.52, Medicare: 909.77, Humana: 865.16, UHC: 1201.42 }},
+          { code: '37253', desc: 'Mechanical thrombectomy, arterial', prices: { Aetna: 171.68, 'BCBS HMO': 199.48, 'BCBS PPO': 218.11, Cigna: 213.41, Medicare: 167.08, Humana: 164.48, UHC: 194.16 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '75822', desc: 'Venous catheter placement', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '75825', desc: 'Venous sampling, complete', prices: { Aetna: 115.85, 'BCBS HMO': 130.05, 'BCBS PPO': 130.05, Cigna: 109.56, Medicare: 111.77, Humana: 110.87, UHC: 256.24 }},
+          { code: '36011', desc: 'Catheter, first order', prices: { Aetna: 863.51, 'BCBS HMO': 944.78, 'BCBS PPO': 1033.05, Cigna: 1009.82, Medicare: 768.31, Humana: 743.81, UHC: 890.33 }},
+          { code: '36012', desc: 'Catheter, second order', prices: { Aetna: 882.96, 'BCBS HMO': 978.68, 'BCBS PPO': 1070.11, Cigna: 1024.99, Medicare: 802.29, Humana: 775.45, UHC: 904.41 }},
+          { code: '36010', desc: 'Catheter into aorta', prices: { Aetna: 577.01, 'BCBS HMO': 634.66, 'BCBS PPO': 693.95, Cigna: 614.33, Medicare: 519.26, Humana: 493.75, UHC: 542.79 }}
+        ],
+        'Varicocele': [
+          { code: '37241', desc: 'Revascularization, lower extremity artery', prices: { Aetna: 5014.97, 'BCBS HMO': 5486.74, 'BCBS PPO': 5999.36, Cigna: 5759.49, Medicare: 4432.86, Humana: 4223.15, UHC: 5059.4 }},
+          { code: '36012', desc: 'Catheter, second-order branch', prices: { Aetna: 882.96, 'BCBS HMO': 978.68, 'BCBS PPO': 1070.11, Cigna: 1024.99, Medicare: 802.29, Humana: 775.45, UHC: 904.41 }},
+          { code: '36011', desc: 'Catheter, first-order branch', prices: { Aetna: 863.51, 'BCBS HMO': 944.78, 'BCBS PPO': 1033.05, Cigna: 1009.82, Medicare: 768.31, Humana: 743.81, UHC: 890.33 }},
+          { code: '75820', desc: 'Venous catheterization, complete', prices: { Aetna: 112.81, 'BCBS HMO': 112.81, 'BCBS PPO': 112.81, Cigna: 112.81, Medicare: 105.72, Humana: 112.81, UHC: 112.81 }},
+          { code: '75831', desc: 'Venous catheterization, fluoroscopic', prices: { Aetna: 121.83, 'BCBS HMO': 135.24, 'BCBS PPO': 135.24, Cigna: 114.59, Medicare: 117.13, Humana: 116.66, UHC: 267.06 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }}
+        ],
+        'PCS': [
+          { code: '37241', desc: 'Revascularization, lower extremity', prices: { Aetna: 5014.97, 'BCBS HMO': 5486.74, 'BCBS PPO': 5999.36, Cigna: 5759.49, Medicare: 4432.86, Humana: 4223.15, UHC: 5059.4 }},
+          { code: '36012', desc: 'Catheter, second-order', prices: { Aetna: 882.96, 'BCBS HMO': 978.68, 'BCBS PPO': 1070.11, Cigna: 1024.99, Medicare: 802.29, Humana: 775.45, UHC: 904.41 }},
+          { code: '36011', desc: 'Catheter, first-order', prices: { Aetna: 863.51, 'BCBS HMO': 944.78, 'BCBS PPO': 1033.05, Cigna: 1009.82, Medicare: 768.31, Humana: 743.81, UHC: 890.33 }},
+          { code: '75825', desc: 'Venous sampling, complete', prices: { Aetna: 115.85, 'BCBS HMO': 130.05, 'BCBS PPO': 130.05, Cigna: 109.56, Medicare: 111.77, Humana: 110.87, UHC: 256.24 }},
+          { code: '75831', desc: 'Venous catheterization, fluoroscopic', prices: { Aetna: 121.83, 'BCBS HMO': 135.24, 'BCBS PPO': 135.24, Cigna: 114.59, Medicare: 117.13, Humana: 116.66, UHC: 267.06 }},
+          { code: '75822', desc: 'Venous catheter placement', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }}
+        ],
+        'Dx Angio': [
+          { code: '36246', desc: '3rd order catheter, neck/chest', prices: { Aetna: 875.4, 'BCBS HMO': 975.95, 'BCBS PPO': 1067.13, Cigna: 997.67, Medicare: 802.11, Humana: 771.27, UHC: 886.6 }},
+          { code: '36247', desc: '2nd order catheter, neck/brain', prices: { Aetna: 1506.47, 'BCBS HMO': 1666.32, 'BCBS PPO': 1822, Cigna: 1766.86, Medicare: 1364, Humana: 1315.5, UHC: 1560.15 }},
+          { code: '36248', desc: 'Additional catheter placement', prices: { Aetna: 121.24, 'BCBS HMO': 121.24, 'BCBS PPO': 121.24, Cigna: 121.24, Medicare: 112.14, Humana: 121.24, UHC: 121.24 }},
+          { code: '75710', desc: 'X-ray neck arteries', prices: { Aetna: 153.28, 'BCBS HMO': 177.46, 'BCBS PPO': 177.46, Cigna: 142.2, Medicare: 147.01, Humana: 143.84, UHC: 334.18 }},
+          { code: '75774', desc: 'X-ray leg arteries', prices: { Aetna: 99.36, 'BCBS HMO': 111.25, 'BCBS PPO': 111.25, Cigna: 93.95, Medicare: 94.59, Humana: 93.28, UHC: 219.42 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '75822', desc: 'Venous flow study', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '75716', desc: 'X-ray arm arteries', prices: { Aetna: 165.84, 'BCBS HMO': 193.15, 'BCBS PPO': 193.15, Cigna: 152.11, Medicare: 159.59, Humana: 157.92, UHC: 356.56 }},
+          { code: '75831', desc: 'Spleen vein imaging', prices: { Aetna: 121.83, 'BCBS HMO': 135.24, 'BCBS PPO': 135.24, Cigna: 114.59, Medicare: 117.13, Humana: 116.66, UHC: 267.06 }},
+          { code: '75625', desc: 'X-ray aorta', prices: { Aetna: 129.27, 'BCBS HMO': 148, 'BCBS PPO': 148, Cigna: 120.45, Medicare: 123.77, Humana: 121.74, UHC: 282.94 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '37252', desc: 'Mechanical thrombectomy, venous', prices: { Aetna: 1016.89, 'BCBS HMO': 1119.32, 'BCBS PPO': 1223.9, Cigna: 1342.52, Medicare: 909.77, Humana: 865.16, UHC: 1201.42 }},
+          { code: '37253', desc: 'Mechanical thrombectomy, arterial', prices: { Aetna: 171.68, 'BCBS HMO': 199.48, 'BCBS PPO': 218.11, Cigna: 213.41, Medicare: 167.08, Humana: 164.48, UHC: 194.16 }}
+        ],
+        'Angio AP': [
+          { code: '37220', desc: 'Revascularization, blocked leg artery', prices: { Aetna: 2672.24, 'BCBS HMO': 2672.24, 'BCBS PPO': 2672.24, Cigna: 2672.24, Medicare: 2024.68, Humana: 2672.74, UHC: 2672.74 }},
+          { code: '37224', desc: 'Revascularization with stent', prices: { Aetna: 3128.63, 'BCBS HMO': 3433.93, 'BCBS PPO': 3754.76, Cigna: 3997.99, Medicare: 2795.42, Humana: 2664.44, UHC: 3524.15 }},
+          { code: '37228', desc: 'Revascularization with stent/atherectomy', prices: { Aetna: 4454.75, 'BCBS HMO': 4875.84, 'BCBS PPO': 5331.39, Cigna: 5760.53, Medicare: 3962, Humana: 3769.8, UHC: 5072.39 }},
+          { code: '37252', desc: 'Revascularization neck/kidney', prices: { Aetna: 1016.89, 'BCBS HMO': 1119.32, 'BCBS PPO': 1223.9, Cigna: 1342.52, Medicare: 909.77, Humana: 865.16, UHC: 1201.42 }},
+          { code: '37253', desc: 'Revascularization with stent', prices: { Aetna: 171.68, 'BCBS HMO': 199.48, 'BCBS PPO': 218.11, Cigna: 213.41, Medicare: 167.08, Humana: 164.48, UHC: 194.16 }},
+          { code: '75710', desc: 'X-ray neck arteries', prices: { Aetna: 153.28, 'BCBS HMO': 177.46, 'BCBS PPO': 177.46, Cigna: 142.2, Medicare: 147.01, Humana: 143.84, UHC: 334.18 }},
+          { code: '75774', desc: 'X-ray leg arteries', prices: { Aetna: 99.36, 'BCBS HMO': 111.25, 'BCBS PPO': 111.25, Cigna: 93.95, Medicare: 94.59, Humana: 93.28, UHC: 219.42 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '75822', desc: 'Venous flow study', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '75625', desc: 'X-ray aorta', prices: { Aetna: 129.27, 'BCBS HMO': 148, 'BCBS PPO': 148, Cigna: 120.45, Medicare: 123.77, Humana: 121.74, UHC: 282.94 }},
+          { code: '75716', desc: 'X-ray arm arteries', prices: { Aetna: 165.84, 'BCBS HMO': 193.15, 'BCBS PPO': 193.15, Cigna: 152.11, Medicare: 159.59, Humana: 157.92, UHC: 356.56 }}
+        ],
+        'Angio Atherectomy': [
+          { code: '37225', desc: 'Revascularization with atherectomy', prices: { Aetna: 9472.73, 'BCBS HMO': 10298.3, 'BCBS PPO': 11260.46, Cigna: 13193.5, Medicare: 8385.64, Humana: 7947.35, UHC: 11581.87 }},
+          { code: '37229', desc: 'Revascularization with stent/atherectomy', prices: { Aetna: 9585.34, 'BCBS HMO': 10465.05, 'BCBS PPO': 11442.79, Cigna: 13239.06, Medicare: 8532.46, Humana: 8117.17, UHC: 11626.26 }},
+          { code: '37252', desc: 'Revascularization neck/kidney', prices: { Aetna: 1016.89, 'BCBS HMO': 1119.32, 'BCBS PPO': 1223.9, Cigna: 1342.52, Medicare: 909.77, Humana: 865.16, UHC: 1201.42 }},
+          { code: '37253', desc: 'Revascularization with stent', prices: { Aetna: 171.68, 'BCBS HMO': 199.48, 'BCBS PPO': 218.11, Cigna: 213.41, Medicare: 167.08, Humana: 164.48, UHC: 194.16 }},
+          { code: '75710', desc: 'X-ray neck arteries', prices: { Aetna: 153.28, 'BCBS HMO': 177.46, 'BCBS PPO': 177.46, Cigna: 142.2, Medicare: 147.01, Humana: 143.84, UHC: 334.18 }},
+          { code: '75774', desc: 'X-ray leg arteries', prices: { Aetna: 99.36, 'BCBS HMO': 111.25, 'BCBS PPO': 111.25, Cigna: 93.95, Medicare: 94.59, Humana: 93.28, UHC: 219.42 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '75716', desc: 'X-ray arm arteries', prices: { Aetna: 165.84, 'BCBS HMO': 193.15, 'BCBS PPO': 193.15, Cigna: 152.11, Medicare: 159.59, Humana: 157.92, UHC: 356.56 }},
+          { code: '75822', desc: 'Venous flow study', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '75831', desc: 'Spleen vein imaging', prices: { Aetna: 121.83, 'BCBS HMO': 135.24, 'BCBS PPO': 135.24, Cigna: 114.49, Medicare: 117.13, Humana: 116.66, UHC: 267.06 }},
+          { code: '75625', desc: 'X-ray aorta', prices: { Aetna: 129.27, 'BCBS HMO': 148, 'BCBS PPO': 148, Cigna: 120.45, Medicare: 123.77, Humana: 121.74, UHC: 282.94 }}
+        ],
+        'Angio Stent': [
+          { code: '37221', desc: 'Revascularization with balloon', prices: { Aetna: 3297.92, 'BCBS HMO': 3297.92, 'BCBS PPO': 3297.92, Cigna: 3297.92, Medicare: 2951.69, Humana: 3297.92, UHC: 3297.92 }},
+          { code: '37226', desc: 'Revascularization with transluminal stent', prices: { Aetna: 8837.31, 'BCBS HMO': 8837.21, 'BCBS PPO': 8837.21, Cigna: 8837.21, Medicare: 7767.38, Humana: 8837.21, UHC: 8837.21 }},
+          { code: '37230', desc: 'Balloon/atherectomy', prices: { Aetna: 9644.08, 'BCBS HMO': 9644.08, 'BCBS PPO': 9644.08, Cigna: 9644.08, Medicare: 8545.54, Humana: 9644.08, UHC: 9644.08 }},
+          { code: '37252', desc: 'Revascularization neck/kidney', prices: { Aetna: 1016.89, 'BCBS HMO': 1119.32, 'BCBS PPO': 1223.9, Cigna: 1342.52, Medicare: 909.77, Humana: 865.16, UHC: 1201.42 }},
+          { code: '37253', desc: 'Revascularization with stent', prices: { Aetna: 171.68, 'BCBS HMO': 199.48, 'BCBS PPO': 218.11, Cigna: 213.41, Medicare: 167.08, Humana: 164.48, UHC: 194.16 }},
+          { code: '75710', desc: 'X-ray neck arteries', prices: { Aetna: 153.28, 'BCBS HMO': 177.46, 'BCBS PPO': 177.46, Cigna: 142.2, Medicare: 147.01, Humana: 143.84, UHC: 334.18 }},
+          { code: '75774', desc: 'X-ray leg arteries', prices: { Aetna: 99.36, 'BCBS HMO': 111.25, 'BCBS PPO': 111.25, Cigna: 93.95, Medicare: 94.59, Humana: 93.28, UHC: 219.42 }},
+          { code: '76937', desc: 'Ultrasound guidance', prices: { Aetna: 40.19, 'BCBS HMO': 42.76, 'BCBS PPO': 42.76, Cigna: 31.99, Medicare: 37.58, Humana: 37.37, UHC: 74.34 }},
+          { code: '99152', desc: 'Sedation, first 15 min', prices: { Aetna: 51.54, 'BCBS HMO': 61.65, 'BCBS PPO': 68.21, Cigna: 52.36, Medicare: 49.36, Humana: 48.77, UHC: 51.61 }},
+          { code: '99153', desc: 'Sedation, additional', prices: { Aetna: 10.7, 'BCBS HMO': 13.56, 'BCBS PPO': 15.01, Cigna: 10.91, Medicare: 11.37, Humana: 11.64, UHC: 10.83 }},
+          { code: '75822', desc: 'Venous flow study', prices: { Aetna: 136.57, 'BCBS HMO': 154.71, 'BCBS PPO': 154.71, Cigna: 110.21, Medicare: 130.9, Humana: 129.24, UHC: 256.96 }},
+          { code: '75831', desc: 'Spleen vein imaging', prices: { Aetna: 121.83, 'BCBS HMO': 135.24, 'BCBS PPO': 135.24, Cigna: 114.59, Medicare: 117.13, Humana: 116.66, UHC: 267.06 }},
+          { code: '75625', desc: 'X-ray aorta', prices: { Aetna: 129.27, 'BCBS HMO': 148, 'BCBS PPO': 148, Cigna: 120.45, Medicare: 123.77, Humana: 121.74, UHC: 282.94 }},
+          { code: '36140', desc: 'Needle into artery', prices: { Aetna: 542.9, 'BCBS HMO': 597.67, 'BCBS PPO': 653.48, Cigna: 557.91, Medicare: 492.74, Humana: 470.7, UHC: 492.98 }},
+          { code: '75716', desc: 'X-ray arm arteries', prices: { Aetna: 165.84, 'BCBS HMO': 193.15, 'BCBS PPO': 193.15, Cigna: 152.11, Medicare: 159.59, Humana: 157.92, UHC: 356.56 }}
+        ]
+      };
+
+      const [selectedProcedure, setSelectedProcedure] = useState('UFE');
+      const [selectedInsurance, setSelectedInsurance] = useState('BCBS PPO');
+      const [cptSettings, setCptSettings] = useState({});
+
+      const insurers = ['Aetna', 'BCBS HMO', 'BCBS PPO', 'Cigna', 'Medicare', 'Humana', 'UHC'];
+
+      const updateCptSetting = (code, field, value) => {
+        setCptSettings(prev => ({
+          ...prev,
+          [code]: {
+            ...prev[code],
+            [field]: value
+          }
+        }));
+      };
+
+      const getCptSetting = (code, field) => {
+        if (!cptSettings[code]) return field === 'quantity' ? 1 : 100;
+        return cptSettings[code][field] !== undefined ? cptSettings[code][field] : (field === 'quantity' ? 1 : 100);
+      };
+
+      const resetSettings = () => {
+        setCptSettings({});
+      };
+
+      const calculations = useMemo(() => {
+        const currentProcedures = procedures[selectedProcedure];
+        return currentProcedures.map(proc => {
+          const basePrice = proc.prices[selectedInsurance];
+          const quantity = getCptSetting(proc.code, 'quantity');
+          const percentage = getCptSetting(proc.code, 'percentage');
+          const finalPrice = basePrice * quantity * (percentage / 100);
+          
+          return {
+            ...proc,
+            basePrice,
+            quantity,
+            percentage,
+            finalPrice
+          };
+        });
+      }, [selectedProcedure, selectedInsurance, cptSettings]);
+
+      const totalPrice = calculations.reduce((sum, calc) => sum + calc.finalPrice, 0);
+      const totalBasePrice = calculations.reduce((sum, calc) => sum + calc.basePrice, 0);
+
+      const insuranceColors = {
+        'Aetna': 'bg-purple-600',
+        'BCBS HMO': 'bg-blue-600',
+        'BCBS PPO': 'bg-blue-700',
+        'Cigna': 'bg-orange-600',
+        'Medicare': 'bg-red-600',
+        'Humana': 'bg-green-600',
+        'UHC': 'bg-indigo-600'
+      };
+
+      const formatCurrency = (num) => {
+        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-4 md:p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-teal-700 via-teal-600 to-cyan-600 rounded-2xl shadow-2xl p-6 mb-6 border border-teal-500/30">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+                    <Building2 className="w-10 h-10 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Texas Vascular Institute</h1>
+                    <p className="text-teal-100 font-medium">OBL Medical Billing Calculator</p>
+                  </div>
+                </div>
+                <Calculator className="w-12 h-12 text-teal-200" />
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-slate-700">
+                <label className="block text-sm font-semibold text-teal-400 mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Procedure Type
+                </label>
+                <select
+                  value={selectedProcedure}
+                  onChange={(e) => setSelectedProcedure(e.target.value)}
+                  className="w-full p-3 bg-slate-700 border-2 border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-white appearance-none cursor-pointer pr-10"
+                >
+                  {Object.keys(procedures).map(proc => (
+                    <option key={proc} value={proc}>{proc}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-slate-700">
+                <label className="block text-sm font-semibold text-teal-400 mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Insurance Provider
+                </label>
+                <select
+                  value={selectedInsurance}
+                  onChange={(e) => setSelectedInsurance(e.target.value)}
+                  className="w-full p-3 bg-slate-700 border-2 border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-white appearance-none cursor-pointer pr-10"
+                >
+                  {insurers.map(ins => (
+                    <option key={ins} value={ins}>{ins}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-slate-700 flex items-end">
+                <button
+                  onClick={resetSettings}
+                  className="w-full p-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  Reset All
+                </button>
+              </div>
+            </div>
+
+            {/* Badges */}
+            <div className="mb-4 flex items-center gap-3 flex-wrap">
+              <span className={`px-4 py-2 rounded-full text-white font-semibold text-sm ${insuranceColors[selectedInsurance]}`}>
+                {selectedInsurance}
+              </span>
+              <span className="px-4 py-2 rounded-full bg-slate-700 text-teal-400 font-semibold text-sm">
+                {selectedProcedure}
+              </span>
+              <span className="px-4 py-2 rounded-full bg-slate-700 text-slate-300 text-sm">
+                {calculations.length} CPT Codes
+              </span>
+            </div>
+
+            {/* Table */}
+            <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-2xl overflow-hidden mb-6 border border-slate-700">
+              <div className="bg-gradient-to-r from-teal-700 to-cyan-700 p-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <DollarSign className="w-6 h-6" />
+                  CPT Code Breakdown
+                </h2>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-700/80 border-b-2 border-teal-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-teal-400 uppercase tracking-wider">CPT Code</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-teal-400 uppercase tracking-wider">Description</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-teal-400 uppercase tracking-wider">Base Price</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-teal-400 uppercase tracking-wider">Qty</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-teal-400 uppercase tracking-wider">Coverage %</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-teal-400 uppercase tracking-wider">Final Price</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700">
+                    {calculations.map((calc, idx) => (
+                      <tr key={`${calc.code}-${idx}`} className={`${idx % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-800/30'} hover:bg-slate-700/50 transition-colors`}>
+                        <td className="px-4 py-3">
+                          <span className="font-mono font-bold text-teal-400 bg-slate-900 px-2 py-1 rounded">{calc.code}</span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-300 max-w-xs truncate" title={calc.desc}>{calc.desc}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-slate-200">
+                          ${formatCurrency(calc.basePrice)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="number"
+                            min="0"
+                            max="99"
+                            value={calc.quantity}
+                            onChange={(e) => updateCptSetting(calc.code, 'quantity', Math.max(0, parseInt(e.target.value) || 0))}
+                            className="w-16 p-2 bg-slate-700 border border-slate-600 rounded text-center text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <select
+                            value={calc.percentage}
+                            onChange={(e) => updateCptSetting(calc.code, 'percentage', parseFloat(e.target.value))}
+                            className="w-24 p-2 bg-slate-700 border border-slate-600 rounded text-center text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer"
+                          >
+                            <option value={100}>100%</option>
+                            <option value={50}>50%</option>
+                            <option value={25}>25%</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={`font-bold text-lg ${calc.finalPrice > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            ${formatCurrency(calc.finalPrice)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gradient-to-r from-teal-800/80 to-cyan-800/80 border-t-4 border-teal-500">
+                    <tr>
+                      <td colSpan="2" className="px-4 py-4 text-left text-lg font-bold text-white">
+                        Total Procedure Cost
+                      </td>
+                      <td className="px-4 py-4 text-right text-slate-300">
+                        ${formatCurrency(totalBasePrice)}
+                      </td>
+                      <td colSpan="2" className="px-4 py-4"></td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="text-2xl font-bold text-emerald-400">
+                          ${formatCurrency(totalPrice)}
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg p-5 border border-slate-700">
+                <p className="text-sm font-semibold text-slate-400 mb-1">Selected Procedure</p>
+                <p className="text-xl font-bold text-white">{selectedProcedure}</p>
+              </div>
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg p-5 border border-slate-700">
+                <p className="text-sm font-semibold text-slate-400 mb-1">Insurance Provider</p>
+                <p className="text-xl font-bold text-white">{selectedInsurance}</p>
+              </div>
+              <div className="bg-gradient-to-br from-teal-700 to-cyan-700 rounded-xl shadow-lg p-5 border border-teal-500/50">
+                <p className="text-sm font-semibold text-teal-100 mb-1">Total Amount</p>
+                <p className="text-2xl font-bold text-white flex items-center">
+                  <DollarSign className="w-6 h-6" />
+                  {formatCurrency(totalPrice)}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 text-center text-slate-500 text-sm">
+              <p>Texas Vascular Institute • OBL Fee Schedule Calculator</p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<MedicalBillingCalculator />);
+  </script>
+</body>
+</html>
